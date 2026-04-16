@@ -1,0 +1,62 @@
+[project]
+name = "analytics-worker"
+version = "0.1.0"
+description = "URL Shortener analytics worker: Redis Streams -> ClickHouse batch pipeline"
+requires-python = ">=3.12,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "URL Shortener Team" }]
+dependencies = [
+    "redis[hiredis]==5.2.1",
+    "clickhouse-connect==0.8.17",
+    "geoip2==5.2.0",
+    "ua-parser[regex]==1.0.1",
+    "structlog==24.4.0",
+    "prometheus-client==0.21.1",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "orjson==3.10.12",
+    "tenacity==9.0.0",
+    "aiohttp==3.11.11",
+    "uvloop==0.21.0 ; sys_platform != 'win32'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.25.0",
+    "pytest-mock==3.14.0",
+    "fakeredis[lua]==2.26.1",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+]
+
+[project.scripts]
+analytics-worker = "worker.main:run_cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["worker"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true

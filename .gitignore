@@ -1,0 +1,75 @@
+# Root-level .gitignore for local dev hygiene.
+# NOTE: this top directory is NOT a git repo — each sub-folder is its own
+# repo with its own .gitignore. This file exists purely so that editors,
+# OS tooling, and occasional `git init` misfires do not pollute anything.
+
+# ---- OS detritus --------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ---- Editors / IDEs -----------------------------------------------------
+.idea/
+.vscode/
+*.iml
+*.sublime-workspace
+*.sublime-project
+.nova/
+.fleet/
+
+# ---- Secrets / env (any child folder) -----------------------------------
+# We keep *.env.example files, but never the real ones.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.crt
+secrets/
+.secrets/
+
+# ---- Docker / compose scratch ------------------------------------------
+*.log
+docker-compose.override.yml
+
+# ---- Language-specific build output (belt-and-suspenders) --------------
+# Go
+**/*.test
+**/bin/
+**/dist/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+**/.venv/
+**/venv/
+
+# Node / Angular
+**/node_modules/
+**/.angular/
+**/coverage/
+**/.npm/
+
+# ---- Local tool caches --------------------------------------------------
+.cache/
+.tmp/
+tmp/
+
+# ---- Memory / orchestrator scratch (keep the md, drop everything else) --
+memory/*.tmp
+memory/*.lock
+
+# ---- Research PDFs / binary dumps we do not want accidentally committed -
+*.pdf
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z

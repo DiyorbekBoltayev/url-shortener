@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shorten URL</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <h1 class="popup__title">Shorten URL</h1>
+      </header>
+
+      <section class="tab-info" aria-label="Current tab">
+        <div class="tab-info__title" id="tabTitle">Loading...</div>
+        <div class="tab-info__url" id="tabUrl"></div>
+      </section>
+
+      <form id="shortenForm" class="form" autocomplete="off">
+        <label class="form__label">
+          <span>Custom alias <span class="form__hint">(optional, 3-10 chars)</span></span>
+          <input
+            id="customSlug"
+            name="customSlug"
+            type="text"
+            pattern="[A-Za-z0-9_-]{3,10}"
+            minlength="3"
+            maxlength="10"
+            placeholder="e.g. my-link"
+          />
+        </label>
+
+        <label class="form__label">
+          <span>Tags <span class="form__hint">(comma-separated)</span></span>
+          <input
+            id="tags"
+            name="tags"
+            type="text"
+            placeholder="marketing, q2, launch"
+          />
+        </label>
+
+        <button type="submit" id="shortenBtn" class="btn btn--primary">
+          <span class="btn__label">Shorten</span>
+          <span class="spinner" aria-hidden="true" hidden></span>
+        </button>
+      </form>
+
+      <section id="result" class="result" hidden>
+        <div class="result__label">Your short link</div>
+        <div class="result__row">
+          <a id="shortUrl" class="result__url" href="#" target="_blank" rel="noopener"></a>
+          <button type="button" id="copyBtn" class="btn btn--ghost" title="Copy to clipboard">
+            Copy
+          </button>
+        </div>
+        <a id="dashboardLink" class="result__dashboard" href="#" target="_blank" rel="noopener">
+          Open dashboard
+        </a>
+      </section>
+
+      <section id="error" class="error" hidden>
+        <div class="error__message" id="errorMessage"></div>
+        <a id="openOptions" href="#" class="error__action">Set API key</a>
+      </section>
+
+      <footer class="popup__footer">
+        <a id="optionsLink" href="#">Settings</a>
+      </footer>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

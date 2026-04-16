@@ -1,0 +1,4 @@
+- [User profile](user_profile.md) — URL shortener project lead; prefers Uzbek communication
+- [Project scope](project_scope.md) — bit.ly-clone, FastAPI+Go hybrid, Angular 19 admin, multi-repo
+- [Workflow feedback](feedback_workflow.md) — parallel agent teams + review agent, orchestrator tracks state
+- [Architecture doc](reference_architecture.md) — full HLA spec at research/05-HLA-high-level-architecture.md

@@ -1,0 +1,49 @@
+run:
+  timeout: 5m
+  tests: true
+  go: "1.22"
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - gosec
+    - misspell
+    - gofmt
+    - goimports
+    - revive
+    - unconvert
+    - bodyclose
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  gosec:
+    excludes:
+      - G104 # handled by errcheck where it matters
+  misspell:
+    locale: US
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+  goimports:
+    local-prefixes: github.com/urlshortener/redirect-service
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+    - path: cmd/
+      linters:
+        - gosec
+  max-issues-per-linter: 0
+  max-same-issues: 0

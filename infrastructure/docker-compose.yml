@@ -1,0 +1,313 @@
+# URL Shortener — Infrastructure stack
+# Compose spec 2026 (no top-level `version:` key — obsolete).
+# Network `url-shortener-net` must exist beforehand: run `make net`.
+
+name: urlshort-infra
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ============================================================
+  # PostgreSQL — asosiy transactional DB
+  # ============================================================
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-urlshortener}
+      POSTGRES_USER: ${POSTGRES_USER:-ushortener}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_dev_only}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - urlshortener-postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+        reservations:
+          cpus: "0.25"
+          memory: 256m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # Redis cache — hot URL kesh (port 6379, db=0, no persistence)
+  # ============================================================
+  redis-cache:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+        --maxmemory 2gb
+        --maxmemory-policy allkeys-lfu
+        --appendonly no
+        --save ""
+    ports:
+      - "${REDIS_CACHE_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+        reservations:
+          cpus: "0.1"
+          memory: 128m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # Redis app — streams, rate limit, sessions (port 6380, AOF on)
+  # ============================================================
+  redis-app:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+        --port 6380
+        --appendonly yes
+        --appendfsync everysec
+    ports:
+      - "${REDIS_APP_HOST_PORT:-6380}:6380"
+    volumes:
+      - urlshortener-redis-app-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+        reservations:
+          cpus: "0.1"
+          memory: 128m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # ClickHouse — analitika
+  # ============================================================
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+      # Default access management is disabled because CLICKHOUSE_PASSWORD may be
+      # empty in dev. Enabling "1" grants full admin RBAC to the default user and,
+      # combined with an empty password, exposes superuser on the shared network.
+      # Set CLICKHOUSE_PASSWORD in .env AND flip this to "1" if you need RBAC.
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "0"
+    ports:
+      - "${CLICKHOUSE_HTTP_HOST_PORT:-8123}:8123"
+      - "${CLICKHOUSE_NATIVE_HOST_PORT:-9000}:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - urlshortener-clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4g
+        reservations:
+          cpus: "0.5"
+          memory: 512m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # MinIO — S3-compatible obyekt storage
+  # ============================================================
+  minio:
+    image: minio/minio:RELEASE.2025-04-08T15-41-24Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme_dev_only}
+    ports:
+      - "9002:9000"
+      - "9001:9001"
+    volumes:
+      - urlshortener-minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # Nginx — reverse proxy (hostga 80/443 chiqadi)
+  # ============================================================
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # Prometheus — metrikalar
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # Grafana — dashboardlar
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      # RV10 2.12: fail-fast if GRAFANA_ADMIN_PASSWORD is unset. The `:?...`
+      # form aborts `docker compose up` with the given message before we
+      # start Grafana with a guessable default.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set to a strong, non-default value}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    ports:
+      - "${GRAFANA_HOST_PORT:-3001}:3000"
+    volumes:
+      - urlshortener-grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+  # ============================================================
+  # GeoIP updater — MaxMind GeoLite2 har hafta yangilanadi
+  # ============================================================
+  geoip-updater:
+    image: maxmindinc/geoipupdate:latest
+    restart: unless-stopped
+    environment:
+      GEOIPUPDATE_ACCOUNT_ID: ${GEOIP_ACCOUNT_ID:-}
+      GEOIPUPDATE_LICENSE_KEY: ${GEOIP_LICENSE_KEY:-}
+      GEOIPUPDATE_EDITION_IDS: "GeoLite2-City GeoLite2-Country"
+      GEOIPUPDATE_FREQUENCY: "168"
+    volumes:
+      - urlshortener-geoip-data:/usr/share/GeoIP
+    logging: *default-logging
+    networks:
+      - url-shortener-net
+
+volumes:
+  urlshortener-postgres-data:
+    name: urlshortener-postgres-data
+  urlshortener-redis-app-data:
+    name: urlshortener-redis-app-data
+  urlshortener-clickhouse-data:
+    name: urlshortener-clickhouse-data
+  urlshortener-minio-data:
+    name: urlshortener-minio-data
+  urlshortener-grafana-data:
+    name: urlshortener-grafana-data
+  urlshortener-geoip-data:
+    name: urlshortener-geoip-data
+  prometheus-data:
+    name: urlshortener-prometheus-data
+
+networks:
+  url-shortener-net:
+    external: true
+    name: url-shortener-net

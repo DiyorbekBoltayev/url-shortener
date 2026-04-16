@@ -1,0 +1,48 @@
+services:
+  analytics-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: urlshortener/analytics-worker:latest
+    container_name: analytics-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Safe defaults even if .env is missing; .env wins when present.
+      REDIS_STREAM_URL: ${REDIS_STREAM_URL:-redis://redis-app:6380/0}
+      CLICKHOUSE_HOST: ${CLICKHOUSE_HOST:-clickhouse}
+      CLICKHOUSE_PORT: ${CLICKHOUSE_PORT:-9000}
+      CLICKHOUSE_HTTP_PORT: ${CLICKHOUSE_HTTP_PORT:-8123}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+      STREAM_NAME: ${STREAM_NAME:-stream:clicks}
+      CONSUMER_GROUP: ${CONSUMER_GROUP:-analytics}
+      BATCH_SIZE: ${BATCH_SIZE:-1000}
+      FLUSH_INTERVAL_SEC: ${FLUSH_INTERVAL_SEC:-1.0}
+      GEOIP_DB_PATH: ${GEOIP_DB_PATH:-/data/GeoLite2-City.mmdb}
+      METRICS_PORT: "9091"
+      HEALTH_PORT: "9092"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Shared read-only GeoIP mmdb (maintained by infrastructure's geoip-updater).
+      - geoip-data:/data:ro
+    # No host ports: only nginx + DB-dev ports bind to host.
+    networks:
+      - url-shortener-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    # NOTE: docker-compose (non-swarm) ignores `deploy.replicas`.
+    # Scale at runtime:  docker compose up --scale analytics-worker=2 -d
+
+networks:
+  url-shortener-net:
+    external: true
+    name: url-shortener-net
+
+volumes:
+  geoip-data:
+    external: true
+    name: urlshortener-geoip-data

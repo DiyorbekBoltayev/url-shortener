@@ -1,0 +1,24 @@
+# Env files
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local data / bind mounts
+data/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# TLS certs (never commit)
+nginx/certs/

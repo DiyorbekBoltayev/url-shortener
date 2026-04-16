@@ -1,0 +1,14 @@
+# Grafana dashboard provider — yuklayotgan papkani ko'rsatadi.
+apiVersion: 1
+
+providers:
+  - name: "url-shortener"
+    orgId: 1
+    folder: "URL Shortener"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

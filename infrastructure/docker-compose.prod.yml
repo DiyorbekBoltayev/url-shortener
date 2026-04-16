@@ -1,0 +1,84 @@
+# Production overrides. Merge semantics: scalars overwrite, lists append,
+# maps merge. Invoke:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+name: urlshort-infra
+
+x-prod-logging: &prod-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4g
+        reservations:
+          cpus: "1.0"
+          memory: 1g
+    logging: *prod-logging
+
+  redis-cache:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768m
+    logging: *prod-logging
+
+  redis-app:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768m
+    logging: *prod-logging
+
+  clickhouse:
+    restart: always
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8g
+        reservations:
+          cpus: "1.0"
+          memory: 2g
+    logging: *prod-logging
+
+  minio:
+    restart: always
+    # MinIO S3 API va console hostga chiqib turadi (CDN uchun)
+    logging: *prod-logging
+
+  nginx:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512m
+    logging: *prod-logging
+
+  prometheus:
+    restart: always
+    logging: *prod-logging
+
+  grafana:
+    restart: always
+    logging: *prod-logging
+
+  geoip-updater:
+    restart: always
+    logging: *prod-logging

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "URL Shortener",
+  "version": "0.1.0",
+  "description": "Shorten any link with one click. Tag, customize, track.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "notifications",
+    "clipboardWrite",
+    "offscreen"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "public/icons/icon-16.png",
+      "48": "public/icons/icon-48.png",
+      "128": "public/icons/icon-128.png"
+    }
+  },
+  "options_page": "src/options/options.html",
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "commands": {
+    "shorten-current-tab": {
+      "suggested_key": { "default": "Ctrl+Shift+L", "mac": "Command+Shift+L" },
+      "description": "Shorten current tab URL"
+    }
+  },
+  "icons": {
+    "16": "public/icons/icon-16.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
+  },
+  "default_locale": "en",
+  "minimum_chrome_version": "116"
+}

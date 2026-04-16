@@ -1,0 +1,97 @@
+<div class="flex h-screen bg-slate-50 dark:bg-slate-900">
+  <!-- Mobile backdrop -->
+  @if (mobileOpen()) {
+    <div class="fixed inset-0 z-30 bg-black/40 md:hidden"
+         (click)="toggleMobile()" aria-hidden="true"></div>
+  }
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-transform duration-200 scrollbar-thin md:static md:translate-x-0"
+    [class.w-64]="!collapsed()"
+    [class.w-16]="collapsed()"
+    [class.-translate-x-full]="!mobileOpen()"
+    [class.translate-x-0]="mobileOpen()">
+
+    <div class="flex items-center justify-between h-14 px-4 border-b border-slate-200 dark:border-slate-700">
+      @if (!collapsed()) {
+        <a routerLink="/dashboard" class="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-50">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-brand-600 text-white">
+            <i class="pi pi-link text-sm"></i>
+          </span>
+          <span>URL Shortener</span>
+        </a>
+      } @else {
+        <a routerLink="/dashboard" aria-label="Home"
+           class="inline-flex items-center justify-center w-8 h-8 rounded-md bg-brand-600 text-white">
+          <i class="pi pi-link text-sm"></i>
+        </a>
+      }
+      <button type="button" class="btn-ghost !p-1 hidden md:inline-flex" (click)="toggle()" aria-label="Toggle sidebar"
+              pTooltip="Toggle sidebar" tooltipPosition="right">
+        <i class="pi" [class.pi-angle-double-left]="!collapsed()" [class.pi-angle-double-right]="collapsed()"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-3">
+      <ul class="space-y-0.5 px-2">
+        @for (item of nav; track item.route) {
+          <li>
+            <a
+              [routerLink]="item.route"
+              [routerLinkActiveOptions]="{ exact: !!item.exact }"
+              routerLinkActive="bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+              [pTooltip]="collapsed() ? (item.labelKey | translate) : ''" tooltipPosition="right">
+              <i [class]="item.icon"></i>
+              @if (!collapsed()) { <span>{{ item.labelKey | translate }}</span> }
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="border-t border-slate-200 dark:border-slate-700 p-2">
+      <button type="button" class="btn-ghost w-full justify-start" (click)="logout()"
+              [pTooltip]="collapsed() ? ('nav.logout' | translate) : ''" tooltipPosition="right">
+        <i class="pi pi-sign-out"></i>
+        @if (!collapsed()) { <span>{{ 'nav.logout' | translate }}</span> }
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="flex items-center justify-between h-14 px-4 sm:px-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn-ghost !p-2 md:hidden" (click)="toggleMobile()"
+                aria-label="Open menu">
+          <i class="pi pi-bars"></i>
+        </button>
+        <div class="text-sm text-slate-500 dark:text-slate-400">
+          @if (user(); as u) {
+            {{ 'nav.welcome_back' | translate }},
+            <span class="font-medium text-slate-700 dark:text-slate-200">{{ u.full_name || u.email }}</span>
+          }
+        </div>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <app-workspace-switcher />
+        <app-language-switcher />
+        <button type="button" class="btn-ghost !p-2" (click)="toggleDark()"
+                [pTooltip]="darkMode() ? ('theme.light' | translate) : ('theme.dark' | translate)" tooltipPosition="bottom"
+                [attr.aria-label]="darkMode() ? ('theme.light' | translate) : ('theme.dark' | translate)">
+          <i class="pi" [class.pi-moon]="!darkMode()" [class.pi-sun]="darkMode()"></i>
+        </button>
+        <a routerLink="/dashboard/links/new" class="btn-primary">
+          <i class="pi pi-plus"></i><span class="hidden sm:inline">{{ 'links.new_link' | translate }}</span>
+        </a>
+        <p-avatar [label]="initials()" shape="circle" styleClass="!bg-brand-600 !text-white" />
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+      <router-outlet />
+    </main>
+  </div>
+</div>

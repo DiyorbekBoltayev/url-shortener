@@ -1,0 +1,17 @@
+{
+  "name": "url-shortener-chrome-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Manifest V3 Chrome extension for one-click URL shortening.",
+  "license": "MIT",
+  "scripts": {
+    "clean": "node ./build.mjs --clean",
+    "build": "npm run clean && tsc && node ./build.mjs",
+    "dev": "tsc --watch",
+    "pack": "cd dist && zip -r ../url-shortener-extension.zip ."
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/chrome": "^0.0.270"
+  }
+}

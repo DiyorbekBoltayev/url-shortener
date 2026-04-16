@@ -1,0 +1,12 @@
+# Not much to ignore (infrastructure repo — no Dockerfiles). Kept for future.
+.git
+.gitignore
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+README.md
+LICENSE
+.idea/
+.vscode/

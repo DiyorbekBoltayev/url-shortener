@@ -1,0 +1,77 @@
+[project]
+name = "urlsh-api-service"
+version = "0.1.0"
+description = "URL Shortener — FastAPI Admin API"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "URL Shortener Team" }]
+dependencies = [
+    "fastapi>=0.115,<0.136",
+    "uvicorn[standard]>=0.41,<0.42",
+    "uvloop>=0.21; sys_platform != 'win32'",
+    "httptools>=0.6",
+    "sqlalchemy[asyncio]>=2.0.44,<2.1",
+    "asyncpg>=0.30,<0.31",
+    "alembic>=1.14,<1.15",
+    "pydantic>=2.11,<2.14",
+    "pydantic-settings>=2.7,<2.14",
+    "pyjwt[crypto]>=2.9,<3",
+    "pwdlib[argon2,bcrypt]>=0.2,<0.3",
+    "redis[hiredis]>=5.2,<6",
+    "clickhouse-connect>=0.8.10,<0.16",
+    "httpx[http2]>=0.28,<0.29",
+    "prometheus-fastapi-instrumentator>=7.1,<8",
+    "structlog>=24.4,<26",
+    "orjson>=3.10,<4",
+    "tenacity>=9.0,<10",
+    "qrcode[pil]>=7.4,<9",
+    "python-multipart>=0.0.17",
+    "email-validator>=2.2",
+    "selectolax>=0.3.21,<0.4",
+    "minio>=7.2.15,<8",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<9",
+    "pytest-asyncio>=0.24,<0.27",
+    "pytest-cov>=5",
+    "aiosqlite>=0.20",
+    "testcontainers[postgres,redis]>=4.9,<5",
+    "ruff>=0.8,<1",
+    "mypy>=1.13,<2",
+    "types-redis",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+package = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "C4", "SIM", "ASYNC", "RUF"]
+ignore = ["S101", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+plugins = ["pydantic.mypy"]

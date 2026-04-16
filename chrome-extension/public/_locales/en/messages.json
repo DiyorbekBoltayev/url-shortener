@@ -1,0 +1,18 @@
+{
+  "extensionName": {
+    "message": "URL Shortener",
+    "description": "Extension name shown in Chrome."
+  },
+  "extensionDescription": {
+    "message": "Shorten any link with one click. Tag, customize, track.",
+    "description": "Description shown in Chrome Web Store and chrome://extensions."
+  },
+  "shortenCurrentTab": {
+    "message": "Shorten current tab URL",
+    "description": "Command label for the keyboard shortcut."
+  },
+  "shortenThisLink": {
+    "message": "Shorten this link",
+    "description": "Context menu item for right-clicking links."
+  }
+}

@@ -1,0 +1,55 @@
+# redirect-service — app-level compose.
+# Infrastructure (postgres, redis-cache, redis-app, geoip-updater, nginx, ...)
+# is provided by the separate infrastructure repo on the shared external network
+# `url-shortener-net` (see INTEGRATION_CONTRACT.md sections 1 & 3).
+#
+# Before `docker compose up` the first time:
+#   docker network create --driver bridge --subnet 172.28.0.0/16 url-shortener-net
+
+services:
+  redirect-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: urlshortener/redirect-service:latest
+    container_name: redirect-service
+    env_file:
+      - .env
+    # No host port — traffic arrives via nginx on the shared network.
+    # expose documents the internal port for operators / tools.
+    expose:
+      - "8080"
+    networks:
+      - url-shortener-net
+    volumes:
+      - geoip-data:/data:ro
+    restart: unless-stopped
+    # The binary implements a `healthcheck` subcommand (hits /health on localhost)
+    # because distroless/static has no shell/wget/curl.
+    healthcheck:
+      test: ["CMD", "/app/redirect", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  url-shortener-net:
+    external: true
+    name: url-shortener-net
+
+volumes:
+  geoip-data:
+    external: true
+    name: urlshortener-geoip-data

@@ -1,0 +1,27 @@
+services:
+  admin-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIG: production
+    image: urlshortener/admin-panel:latest
+    container_name: admin-panel
+    restart: unless-stopped
+    # RV10 2.3: runs as the non-root `nginx` user (uid 101) on :8080, not :80.
+    # The upstream root nginx in infrastructure/ proxies to admin-panel:8080.
+    expose:
+      - "8080"
+    networks:
+      - url-shortener-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  url-shortener-net:
+    external: true
+    name: url-shortener-net

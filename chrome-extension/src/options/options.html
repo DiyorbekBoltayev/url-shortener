@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener - Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page__header">
+        <h1>URL Shortener Settings</h1>
+        <p class="page__lead">
+          Point the extension at your URL shortener instance and paste an API key from
+          <code>/dashboard/settings/api-keys</code>.
+        </p>
+      </header>
+
+      <form id="settingsForm" class="form" autocomplete="off">
+        <label class="form__label">
+          <span>API base URL</span>
+          <input
+            id="apiBase"
+            name="apiBase"
+            type="url"
+            placeholder="http://localhost"
+            required
+          />
+          <span class="form__hint">
+            Example: <code>https://go.brand.com</code>. No trailing slash required.
+          </span>
+        </label>
+
+        <label class="form__label">
+          <span>API key</span>
+          <input
+            id="apiKey"
+            name="apiKey"
+            type="password"
+            placeholder="Paste key..."
+            autocomplete="off"
+            required
+          />
+          <span class="form__hint">
+            Stored locally in <code>chrome.storage.local</code>. Never sent anywhere except
+            your configured API host.
+          </span>
+        </label>
+
+        <div class="form__actions">
+          <button type="submit" class="btn btn--primary">Save</button>
+          <button type="button" id="testBtn" class="btn btn--ghost">Test connection</button>
+        </div>
+
+        <div id="status" class="status" hidden></div>
+      </form>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
